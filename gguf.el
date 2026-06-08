@@ -1,4 +1,4 @@
-;;; ggufmeta.el --- Major mode for viewing GGUF file metadata  -*- lexical-binding: t; -*-
+;;; gguf.el --- Major mode for viewing GGUF file metadata  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026  Your Name
 
@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: tools, files
-;; URL: https://example.com/ggufmeta
+;; URL: https://example.com/gguf
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 ;; Format) model files using the external `ggufmeta' binary.
 ;;
 ;; Usage:
-;;   M-x ggufmeta-open RET /path/to/model.gguf RET
+;;   M-x gguf-open RET /path/to/model.gguf RET
 ;;
 ;; Or simply visit a .gguf file — the mode will automatically activate
 ;; and display the metadata.
@@ -41,13 +41,13 @@
 ;;;; Advice on `insert-file-contents' — avoid reading multi-GB GGUF files
 ;;;; into memory when visiting them.
 
-(defun ggufmeta--on-insert-file-contents (orig-fun filename &optional visit beg end replace)
+(defun gguf--on-insert-file-contents (orig-fun filename &optional visit beg end replace)
   "Advice wrapping `insert-file-contents'.
 
 If FILENAME ends in `.gguf', insert a tiny placeholder string
 instead of reading the actual (potentially multi-gigabyte) file.
 This avoids loading the entire file into memory only to discard
-it a moment later when `ggufmeta-mode' replaces the content with
+it a moment later when `gguf-mode' replaces the content with
 metadata output from the `ggufmeta' binary."
   (if (and (stringp filename)
            (string-suffix-p ".gguf" filename))
@@ -66,7 +66,7 @@ metadata output from the `ggufmeta' binary."
     (apply orig-fun filename visit beg end replace)))
 
 ;;;###autoload
-(advice-add 'insert-file-contents :around #'ggufmeta--on-insert-file-contents)
+(advice-add 'insert-file-contents :around #'gguf--on-insert-file-contents)
 ;; TODO: revisit this approach — an :around advice on a C primitive is
 ;; broad.  A more surgical solution like a file-name-handler-alist entry
 ;; would be preferable, but it requires handling a large set of low-level
@@ -75,57 +75,57 @@ metadata output from the `ggufmeta' binary."
 ;; now.
 
 
-(defgroup ggufmeta nil
+(defgroup gguf nil
   "Major mode for viewing GGUF file metadata."
-  :prefix "ggufmeta-"
+  :prefix "gguf-"
   :group 'tools)
 
-(defcustom ggufmeta-program "ggufmeta"
+(defcustom gguf-ggufmeta-program "ggufmeta"
   "Name or path of the `ggufmeta' executable."
   :type 'string
-  :group 'ggufmeta)
+  :group 'gguf)
 
-(defcustom ggufmeta-auto-update t
+(defcustom gguf-auto-update t
   "Non-nil means automatically re-run `ggufmeta' when the file changes.
 
 When `revert-buffer' is called (e.g. via `g'), the metadata will
 be refreshed from the `ggufmeta' binary."
   :type 'boolean
-  :group 'ggufmeta)
+  :group 'gguf)
 
 ;;; Mode map
 
-(defvar-keymap ggufmeta-mode-map
-  :doc "Keymap for `ggufmeta-mode'."
-  "g"     #'ggufmeta-refresh
+(defvar-keymap gguf-mode-map
+  :doc "Keymap for `gguf-mode'."
+  "g"     #'gguf-refresh
   "q"     #'quit-window
   "n"     #'next-line
   "p"     #'previous-line
-  "RET"   #'ggufmeta-show-help)
+  "RET"   #'gguf-show-help)
 
 ;;; Help
 
-(defun ggufmeta-show-help ()
-  "Display brief help for `ggufmeta-mode'."
+(defun gguf-show-help ()
+  "Display brief help for `gguf-mode'."
   (interactive)
-  (describe-function 'ggufmeta-mode))
+  (describe-function 'gguf-mode))
 
 ;;; Core
 
-(defun ggufmeta--run (filename)
+(defun gguf--run (filename)
   "Run `ggufmeta' on FILENAME and return the output as a string.
 Raise an error if the binary is not found or exits non-zero."
-  (let ((executable (executable-find ggufmeta-program)))
+  (let ((executable (executable-find gguf-ggufmeta-program)))
     (unless executable
       (error "Cannot find `%s' in `exec-path'.  Please install the ggufmeta binary"
-             ggufmeta-program))
+             gguf-ggufmeta-program))
     (with-temp-buffer
       (unless (zerop (call-process executable nil t nil
                                    (expand-file-name filename)))
-        (error "`%s' exited with non-zero status" ggufmeta-program))
+        (error "`%s' exited with non-zero status" gguf-ggufmeta-program))
       (buffer-string))))
 
-(defun ggufmeta--insert-header (filename)
+(defun gguf--insert-header (filename)
   "Insert a header with FILENAME and a separator for the metadata display."
   (let ((name (file-name-nondirectory filename))
         (dir  (file-name-directory  filename)))
@@ -136,11 +136,11 @@ Raise an error if the binary is not found or exits non-zero."
       (insert (format "Directory: %s\n" (directory-file-name dir))))
     (insert (make-string (window-width) ?─) "\n")))
 
-(defun ggufmeta--insert-output (filename)
+(defun gguf--insert-output (filename)
   "Insert the `ggufmeta' output for FILENAME into the current buffer.
 Lines containing a colon are split using `string-split'; the key
 portion is fontified with `font-lock-keyword-face'."
-  (let ((raw (ggufmeta--run filename)))
+  (let ((raw (gguf--run filename)))
     (dolist (line (split-string raw "\n" t))
       (pcase (string-split line ":" t 2)
         (`(,key ,val)
@@ -149,51 +149,51 @@ portion is fontified with `font-lock-keyword-face'."
         (_
          (insert line "\n"))))))
 
-(defun ggufmeta-refresh ()
+(defun gguf-refresh ()
   "Re-run `ggufmeta' on the file associated with the current buffer."
   (interactive)
   (unless (buffer-file-name)
     (user-error "Buffer is not visiting a file"))
   (let ((inhibit-read-only t))
     (erase-buffer)
-    (ggufmeta--insert-header (buffer-file-name))
-    (ggufmeta--insert-output (buffer-file-name))
+    (gguf--insert-header (buffer-file-name))
+    (gguf--insert-output (buffer-file-name))
     (goto-char (point-min))
     (set-buffer-modified-p nil))
-  (message "Refreshed metadata from `%s'" ggufmeta-program))
+  (message "Refreshed metadata from `%s'" gguf-ggufmeta-program))
 
 ;;; Mode definition
 
 ;;;###autoload
-(define-derived-mode ggufmeta-mode special-mode "GGUF"
+(define-derived-mode gguf-mode special-mode "GGUF"
   "Major mode for viewing metadata of GGUF model files.
 
 This mode runs the external `ggufmeta' binary to display a
 human-readable summary of the file's metadata.  The buffer is
-read-only; use \\[ggufmeta-refresh] (`g') to re-run the tool.
+read-only; use \\[gguf-refresh] (`g') to re-run the tool.
 
-\\{ggufmeta-mode-map}"
-  :group 'ggufmeta
-  :after-hook (when (and ggufmeta-auto-update
+\\{gguf-mode-map}"
+  :group 'gguf
+  :after-hook (when (and gguf-auto-update
                          buffer-file-name
                          (string-suffix-p ".gguf" buffer-file-name))
-                (ggufmeta-refresh))
+                (gguf-refresh))
   (setq-local buffer-read-only t)
   (setq-local revert-buffer-function
               (lambda (_ignore-auto _noconfirm)
-                (ggufmeta-refresh))))
+                (gguf-refresh))))
 
 ;;;###autoload
-(defun ggufmeta-open (filename)
+(defun gguf-open (filename)
   "Open a GGUF file and display its metadata using `ggufmeta'.
 Interactively, prompt for FILENAME."
   (interactive "fGGUF file: ")
   (let ((buf (generate-new-buffer
-              (format "*ggufmeta: %s*" (file-name-nondirectory filename)))))
+              (format "*gguf: %s*" (file-name-nondirectory filename)))))
     (with-current-buffer buf
-      (ggufmeta-mode)
-      (ggufmeta--insert-header filename)
-      (ggufmeta--insert-output filename)
+      (gguf-mode)
+      (gguf--insert-header filename)
+      (gguf--insert-output filename)
       (goto-char (point-min))
       (setq buffer-file-name (expand-file-name filename))
       (setq buffer-file-truename (file-truename filename))
@@ -202,8 +202,8 @@ Interactively, prompt for FILENAME."
     (pop-to-buffer buf)))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.gguf\\'" . ggufmeta-mode))
+(add-to-list 'auto-mode-alist '("\\.gguf\\'" . gguf-mode))
 
-(provide 'ggufmeta)
+(provide 'gguf)
 
-;;; ggufmeta.el ends here
+;;; gguf.el ends here
