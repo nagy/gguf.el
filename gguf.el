@@ -65,7 +65,6 @@ metadata output from the `ggufmeta' binary."
     ;; Not a .gguf file — call the original function normally.
     (apply orig-fun filename visit beg end replace)))
 
-;;;###autoload
 (advice-add 'insert-file-contents :around #'gguf--on-insert-file-contents)
 ;; TODO: revisit this approach — an :around advice on a C primitive is
 ;; broad.  A more surgical solution like a file-name-handler-alist entry
