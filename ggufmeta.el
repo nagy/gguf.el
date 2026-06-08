@@ -38,6 +38,43 @@
 
 ;;; Code:
 
+;;;; Advice on `insert-file-contents' — avoid reading multi-GB GGUF files
+;;;; into memory when visiting them.
+
+(defun ggufmeta--on-insert-file-contents (orig-fun filename &optional visit beg end replace)
+  "Advice wrapping `insert-file-contents'.
+
+If FILENAME ends in `.gguf', insert a tiny placeholder string
+instead of reading the actual (potentially multi-gigabyte) file.
+This avoids loading the entire file into memory only to discard
+it a moment later when `ggufmeta-mode' replaces the content with
+metadata output from the `ggufmeta' binary."
+  (if (and (stringp filename)
+           (string-suffix-p ".gguf" filename))
+      ;; Don't read the file — insert a placeholder.
+      (let ((truename (file-truename filename))
+            (attrs    (file-attributes filename 'integer)))
+        (insert (format ";; %s\n" (file-name-nondirectory filename)))
+        (when visit
+          (setq buffer-file-name filename)
+          (setq buffer-file-truename truename)
+          (setq buffer-file-number (nth 7 attrs))
+          (set-buffer-modified-p nil)
+          (setq buffer-undo-list t))
+        (list filename (buffer-size)))
+    ;; Not a .gguf file — call the original function normally.
+    (apply orig-fun filename visit beg end replace)))
+
+;;;###autoload
+(advice-add 'insert-file-contents :around #'ggufmeta--on-insert-file-contents)
+;; TODO: revisit this approach — an :around advice on a C primitive is
+;; broad.  A more surgical solution like a file-name-handler-alist entry
+;; would be preferable, but it requires handling a large set of low-level
+;; operations (file-exists-p, file-attributes, expand-file-name, …) with
+;; careful recursion inhibition.  The advice is simpler and correct for
+;; now.
+
+
 (defgroup ggufmeta nil
   "Major mode for viewing GGUF file metadata."
   :prefix "ggufmeta-"
@@ -159,6 +196,7 @@ Interactively, prompt for FILENAME."
       (ggufmeta--insert-output filename)
       (goto-char (point-min))
       (setq buffer-file-name (expand-file-name filename))
+      (setq buffer-file-truename (file-truename filename))
       (setq buffer-read-only t)
       (set-buffer-modified-p nil))
     (pop-to-buffer buf)))

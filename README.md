@@ -6,6 +6,21 @@ Unified Format) model files.
 ## Requirements
 
 - Emacs 29.1 or later
+- The `ggufmeta' binary installed somewhere in `PATH`
+
+## How it works
+
+When you visit a `.gguf` file, Emacs normally reads the entire file into
+memory.  For multi-gigabyte GGUF model files this is wasteful since we
+only need the metadata.
+
+`ggufmeta.el` avoids this by advising `insert-file-contents` at the
+Emacs Lisp level.  When it detects a `.gguf` file, it injects a tiny
+placeholder string (a few bytes) instead of reading the actual file.
+The `ggufmeta-mode` major mode then replaces this placeholder with the
+metadata output from the `ggufmeta` binary.
+
+The raw GGUF bytes are **never** loaded into an Emacs buffer.
 - The `ggufmeta` binary installed somewhere in `PATH`
 
 The `ggufmeta` binary must accept a single file argument and print a
