@@ -100,14 +100,7 @@ be refreshed from the `ggufmeta' binary."
   "q"     #'quit-window
   "n"     #'next-line
   "p"     #'previous-line
-  "RET"   #'gguf-show-help)
-
-;;; Help
-
-(defun gguf-show-help ()
-  "Display brief help for `gguf-mode'."
-  (interactive)
-  (describe-function 'gguf-mode))
+  )
 
 ;;; Core
 
