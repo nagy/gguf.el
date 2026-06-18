@@ -72,4 +72,4 @@ inspect.  A dedicated `*gguf: <name>*` buffer is shown.
 
 ## License
 
-GPLv3 or later.
+[AGPLv3+](./LICENSE)

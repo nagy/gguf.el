@@ -1,25 +1,26 @@
 ;;; gguf.el --- Major mode for viewing GGUF file metadata  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2026  Your Name
+;; Copyright (C) 2026 Daniel Nagy
 
-;; Author: Your Name <your-email@example.com>
+;; Author: Daniel Nagy
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "30.1"))
 ;; Keywords: tools, files
-;; URL: https://example.com/gguf
+;; URL: https://github.com/nagy/gguf.el
 
-;; This program is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation, either version 3 of the License, or
-;; (at your option) any later version.
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
 
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+;; GNU Affero General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;; You should have received a copy of the GNU Affero General Public
+;; License along with this program.  If not, see
+;; <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -99,8 +100,8 @@ be refreshed from the `ggufmeta' binary."
   "g"     #'gguf-refresh
   "q"     #'quit-window
   "n"     #'next-line
-  "p"     #'previous-line
-  )
+  "p"     #'previous-line)
+
 
 ;;; Core
 

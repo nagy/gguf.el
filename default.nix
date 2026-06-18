@@ -21,7 +21,7 @@ melpaBuild {
       When visiting a .gguf file, the raw file content is never loaded
       into memory — only the metadata output is shown.
     '';
-    license = lib.licenses.gpl3Plus;
+    license = lib.licenses.agpl3Plus;
     homepage = "https://example.com/gguf";
     maintainers = with lib.maintainers; [ nagy ];
     platforms = lib.platforms.unix;
